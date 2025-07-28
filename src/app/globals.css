@@ -4,6 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --font-sans: cnn_sans_display, helveticaneue, Helvetica, Arial, Utkal, sans-serif;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -38,7 +39,12 @@
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
 }
-
+body {
+  font-family: cnn_sans_display, helveticaneue, Helvetica, Arial, Utkal, sans-serif;
+}
+h1, h2, h3, .font-heading {
+  font-family: cnn_sans_display, helveticaneue, Helvetica, Arial, Utkal, sans-serif;
+}
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -87,7 +93,42 @@
 
   body {
     @apply bg-background text-foreground;
-    /* font-family: var(--font-sans); */
+     font-family: var(--font-sans), helveticaneue, Helvetica, Arial, Utkal, sans-serif;
+  }
+}
+@layer components {
+  /* Regular text */
+  .nunito-sans-regular {
+    font-family: 'Nunito Sans', sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    /* pick your width & optical‑size axes here: */
+    font-variation-settings: 
+      'wdth' 100,    /* normal width */
+      'YTLC' 500;    /* choose an optical‑size around mid range */
+  }
+
+  /* Bold headings */
+  .nunito-sans-bold {
+    font-family: 'Nunito Sans', sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 700;
+    font-style: normal;
+    font-variation-settings: 
+      'wdth' 100,
+      'YTLC' 700;    /* bigger optical size for large headings */
+  }
+
+  /* Italic text */
+  .nunito-sans-italic {
+    font-family: 'Nunito Sans', sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: italic;
+    font-variation-settings: 
+      'wdth' 100,
+      'YTLC' 500;
   }
 }
 
