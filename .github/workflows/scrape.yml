@@ -1,0 +1,30 @@
+name: Scrape and store Ukraine articles
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'  # every 12 hours
+  workflow_dispatch:        # allows manual trigger
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        pip install selenium psycopg2-binary
+
+    - name: Run scraper
+      env:
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+      run: python scraper.py
