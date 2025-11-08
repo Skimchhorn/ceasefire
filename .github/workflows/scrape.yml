@@ -2,7 +2,7 @@ name: Scrape Ukraine Articles
 
 on:
   schedule:
-    - cron: '0 */12 * * *'  # every 12 hours
+    - cron: '0 */12 * * *'
   workflow_dispatch:
 
 jobs:
@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -21,13 +21,22 @@ jobs:
         run: |
           pip install selenium psycopg2-binary python-dotenv
 
-      - name: Set environment variables
+      - name: Diagnose DB host resolution
         run: |
-          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
-          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
-          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          if [ -z "${DB_HOST:-}" ]; then
+            echo "DB_HOST is empty (secret missing or not passed)"; exit 1
+          fi
+          echo "Checking DNS for $DB_HOST ..."
+          getent hosts "$DB_HOST" || { echo "DNS lookup failed for $DB_HOST"; exit 2; }
+
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
 
       - name: Run scraper
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: python scraper/scraper.py
