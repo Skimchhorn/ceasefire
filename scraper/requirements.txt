@@ -1,0 +1,8 @@
+# Database driver
+psycopg2-binary==2.9.9
+
+# Web scraping
+selenium==4.15.2
+
+# Environment variables (for local development)
+python-dotenv==1.0.0
