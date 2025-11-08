@@ -1,5 +1,18 @@
 name: Scrape Ukraine Articles
 
+# This workflow scrapes humanitarian articles from rescue.org
+# and stores them in Supabase PostgreSQL database.
+# 
+# Required GitHub Secrets:
+#   DB_HOST: Supabase pooler hostname (e.g., aws-1-ca-central-1.pooler.supabase.com)
+#   DB_PORT: Database port (5432 for session pooler)
+#   DB_NAME: Database name (usually 'postgres')
+#   DB_USER: Database user (e.g., postgres.xxxxx)
+#   DB_PASSWORD: Database password
+#   DB_SSLMODE: SSL mode (optional, defaults to 'require')
+#
+# Note: Using Supabase Session Pooler for IPv4 compatibility with GitHub Actions
+
 on:
   schedule:
     # Runs every 12 hours at 00:00 and 12:00 UTC
@@ -41,29 +54,36 @@ jobs:
           echo "ChromeDriver version:"
           chromedriver --version
 
-      - name: 🔍 DNS Diagnostics
+      - name: 🔍 DNS Diagnostics (Supabase Pooler Check)
         run: |
-          echo "Checking DNS resolution for database host..."
+          echo "Checking connection to Supabase pooler..."
           echo "Host: ${{ secrets.DB_HOST }}"
           echo ""
-          echo "IPv4 (A records):"
-          getent ahosts "${{ secrets.DB_HOST }}" | grep STREAM | grep -v ':' || echo "No IPv4 addresses found"
-          echo ""
-          echo "IPv6 (AAAA records):"
-          getent ahosts "${{ secrets.DB_HOST }}" | grep STREAM | grep ':' || echo "No IPv6 addresses found"
+          if [[ "${{ secrets.DB_HOST }}" == *"pooler.supabase.com"* ]]; then
+            echo "✅ Using Supabase Session Pooler (IPv4 compatible)"
+            echo "DNS lookup:"
+            getent ahosts "${{ secrets.DB_HOST }}" | grep STREAM | head -3 || true
+          else
+            echo "⚠️  Not using Supabase pooler"
+            echo "IPv4 (A records):"
+            getent ahosts "${{ secrets.DB_HOST }}" | grep STREAM | grep -v ':' || echo "No IPv4 addresses found"
+            echo ""
+            echo "IPv6 (AAAA records):"
+            getent ahosts "${{ secrets.DB_HOST }}" | grep STREAM | grep ':' || echo "No IPv6 addresses found"
+          fi
         env:
           DB_HOST: ${{ secrets.DB_HOST }}
         continue-on-error: true
 
       - name: 🤖 Run scraper
         env:
-          DB_HOST: ${{ secrets.DB_HOST }}          # DNS hostname (for TLS verification)
-          DB_HOSTADDR: ${{ secrets.DB_HOSTADDR }}  # IPv4 address (forces IPv4 connection)
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_SSLMODE: ${{ secrets.DB_SSLMODE || 'require' }}  # Default to 'require' for security
+          DB_HOST: ${{ secrets.DB_HOST }}              # Supabase pooler hostname
+          DB_PORT: ${{ secrets.DB_PORT }}              # Port (5432 for session pooler)
+          DB_NAME: ${{ secrets.DB_NAME }}              # Database name
+          DB_USER: ${{ secrets.DB_USER }}              # Database user
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}      # Database password
+          DB_SSLMODE: ${{ secrets.DB_SSLMODE || 'require' }}  # SSL mode (default: require)
+          # Note: DB_HOSTADDR not needed when using Supabase pooler (IPv4 built-in)
         run: python scraper/scraper.py
       
       - name: 📊 Upload logs on failure
