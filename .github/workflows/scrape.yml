@@ -2,18 +2,17 @@ name: Scrape Ukraine Articles
 
 on:
   schedule:
-    - cron: '0 */12 * * *'  # every 12 hours
+    - cron: '0 */12 * * *'
   workflow_dispatch:
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -21,13 +20,20 @@ jobs:
         run: |
           pip install selenium psycopg2-binary python-dotenv
 
-      - name: Set environment variables
+      - name: Check DNS (A/AAAA)
         run: |
-          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
-          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
-          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "Host: $DB_HOST"
+          getent ahosts "$DB_HOST" || true
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
 
       - name: Run scraper
+        env:
+          DB_HOST:     ${{ secrets.DB_HOST }}      # DNS name (keep this)
+          DB_HOSTADDR: ${{ secrets.DB_HOSTADDR }}  # <-- add an IPv4 here as a secret (e.g., 34.x.x.x)
+          DB_PORT:     ${{ secrets.DB_PORT }}
+          DB_NAME:     ${{ secrets.DB_NAME }}
+          DB_USER:     ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_SSLMODE:  require                      # or set as secret if your provider differs
         run: python scraper/scraper.py
