@@ -8,7 +8,6 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -21,22 +20,20 @@ jobs:
         run: |
           pip install selenium psycopg2-binary python-dotenv
 
-      - name: Diagnose DB host resolution
+      - name: Check DNS (A/AAAA)
         run: |
-          if [ -z "${DB_HOST:-}" ]; then
-            echo "DB_HOST is empty (secret missing or not passed)"; exit 1
-          fi
-          echo "Checking DNS for $DB_HOST ..."
-          getent hosts "$DB_HOST" || { echo "DNS lookup failed for $DB_HOST"; exit 2; }
-
+          echo "Host: $DB_HOST"
+          getent ahosts "$DB_HOST" || true
         env:
           DB_HOST: ${{ secrets.DB_HOST }}
 
       - name: Run scraper
         env:
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
+          DB_HOST:     ${{ secrets.DB_HOST }}      # DNS name (keep this)
+          DB_HOSTADDR: ${{ secrets.DB_HOSTADDR }}  # <-- add an IPv4 here as a secret (e.g., 34.x.x.x)
+          DB_PORT:     ${{ secrets.DB_PORT }}
+          DB_NAME:     ${{ secrets.DB_NAME }}
+          DB_USER:     ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_SSLMODE:  require                      # or set as secret if your provider differs
         run: python scraper/scraper.py
