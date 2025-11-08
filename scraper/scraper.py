@@ -34,11 +34,15 @@ time.sleep(3)
 articles = driver.find_elements(By.TAG_NAME, "h3")
 titles = [a.text.strip() for a in articles if a.text.strip()]
 
+print("📰 Scraped Articles:")
+for i, title in enumerate(titles, start=1): 
+    print(f"{i}. {title}")
+    
 # Insert into DB
-cur.execute("CREATE TABLE IF NOT EXISTS war_articles (id SERIAL PRIMARY KEY, title TEXT, created_at TIMESTAMP DEFAULT now());")
+# cur.execute("CREATE TABLE IF NOT EXISTS war_articles (id SERIAL PRIMARY KEY, title TEXT, created_at TIMESTAMP DEFAULT now());")
 
-for title in titles:
-    cur.execute("INSERT INTO war_articles (title) VALUES (%s)", (title,))
+# for title in titles:
+#     cur.execute("INSERT INTO war_articles (title) VALUES (%s)", (title,))
 
 conn.commit()
 cur.close()

@@ -1,8 +1,26 @@
 import { StoryPreview } from "@/components/StoryPreview";
 import { CallToAction } from "@/components/CallToAction";
 import { Footer } from '@/components/footer'
+import { supabase } from "@/lib/supabaseClient";
 
-export default function App() {
+export default async function App() {
+const { data: articles, error } = await supabase
+  .from("war_articles")
+  .select(`
+    id,
+    country,
+    title,
+    description,
+    created_at,
+    article_images (image_url)
+  `)
+  .order("created_at", { ascending: false });
+
+
+  if (error) {
+    console.error(error);
+    return <div>Error loading articles</div>;
+  }
   return (
     <div className="nunito-sans-regular min-h-screen relative">
       {/* Background Image with Blur and Overlay */}
@@ -41,29 +59,23 @@ export default function App() {
         {/* Split Story Previews */}
         <section className="relative bg-black/50 backdrop-blur-sm">
           <div className="grid lg:grid-cols-2 min-h-[700px]">
-            {/* Thai Refugee Story */}
-            <div className="bg-gradient-to-br from-gray-900/90 via-gray-800/90 to-gray-900/90 backdrop-blur-sm border-r border-white/10">
-              <StoryPreview
-                country="thailand"
-                title="Sunisa's Silent Tears"
-                description="Forced to flee with only the clothes on her back, Sunisa now lives in uncertainty. Her children ask when they can go home, but she has no answer. Yet in her pain, she finds strength to help others who share her fate."
-                imageUrl="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-                videoUrl="#"
-              />
-            </div>
-            
-            {/* Cambodian Refugee Story */}
-            <div className="bg-gradient-to-br from-gray-900/90 via-gray-800/90 to-gray-900/90 backdrop-blur-sm">
-              <StoryPreview
-                country="cambodia"
-                title="Sophea's Lost Dreams"
-                description="Once a teacher with dreams of educating the next generation, Sophea now struggles to survive each day. The classroom she loved is gone, but her determination to rebuild and teach again keeps her moving forward."
-                imageUrl="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-                videoUrl="#"
-              />
-            </div>
+            {articles?.map((article) => (
+              <div
+                key={article.id}
+                className="bg-gradient-to-br from-gray-900/90 via-gray-800/90 to-gray-900/90 backdrop-blur-sm border-r border-white/10"
+              >
+                <StoryPreview
+                  color={true} // example boolean
+                  country={article.country}
+                  title={article.title}
+                  description={article.description}
+                  images={article.article_images?.map((img) => img.image_url) || []}
+                />
+              </div>
+            ))}
           </div>
         </section>
+
 
         {/* Statistics Section */}
         <section className="py-16 bg-black/70 backdrop-blur-sm border-y border-white/10">

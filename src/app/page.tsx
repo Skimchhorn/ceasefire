@@ -3,6 +3,7 @@ import { ConflictCard } from "@/components/ConflictCard";
 import { CallToAction } from "@/components/CallToAction";
 import { Clock, Globe, Users, Heart, Bird } from "lucide-react";
 import { Footer } from '@/components/footer'
+import { supabase } from "@/lib/supabaseClient";
 
 export default function App() {
   const conflicts = [
