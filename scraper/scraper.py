@@ -54,11 +54,12 @@ def connect_to_database(max_retries=5):
     validate_db_credentials()
     
     # Build connection kwargs
+    db_host = os.getenv("DB_HOST")
     db_kwargs = {
         "dbname": os.getenv("DB_NAME"),
         "user": os.getenv("DB_USER"),
         "password": os.getenv("DB_PASSWORD"),
-        "host": os.getenv("DB_HOST"),  # DNS name for TLS identity
+        "host": db_host,
         "port": os.getenv("DB_PORT", "5432"),
     }
     
@@ -67,19 +68,27 @@ def connect_to_database(max_retries=5):
     db_kwargs["sslmode"] = sslmode
     print(f"🔒 Using SSL mode: {sslmode}")
     
-    # Force IPv4 connection
-    hostaddr = os.getenv("DB_HOSTADDR")
-    if not hostaddr:
-        print("⚠️  DB_HOSTADDR not set, attempting to resolve IPv4...")
-        hostaddr = resolve_ipv4(db_kwargs["host"])
-    else:
-        print(f"✅ Using provided DB_HOSTADDR: {hostaddr}")
+    # Check if using Supabase pooler (which supports IPv4 natively)
+    is_supabase_pooler = "pooler.supabase.com" in db_host
     
-    if hostaddr:
-        db_kwargs["hostaddr"] = hostaddr
-        print(f"🔧 Forcing IPv4 connection via hostaddr: {hostaddr}")
+    if is_supabase_pooler:
+        print(f"✅ Detected Supabase Connection Pooler - IPv4 supported natively!")
+        print(f"   Host: {db_host}")
+        # Pooler resolves to IPv4 automatically, no need for hostaddr
     else:
-        print("⚠️  No IPv4 address available, will try DNS resolution (may fail on IPv6-only hosts)")
+        # Force IPv4 connection for direct connections
+        hostaddr = os.getenv("DB_HOSTADDR")
+        if not hostaddr:
+            print("⚠️  DB_HOSTADDR not set, attempting to resolve IPv4...")
+            hostaddr = resolve_ipv4(db_host)
+        else:
+            print(f"✅ Using provided DB_HOSTADDR: {hostaddr}")
+        
+        if hostaddr:
+            db_kwargs["hostaddr"] = hostaddr
+            print(f"🔧 Forcing IPv4 connection via hostaddr: {hostaddr}")
+        else:
+            print("⚠️  No IPv4 address available, will try DNS resolution (may fail on IPv6-only hosts)")
     
     # Connect with retry logic
     print(f"\n🔌 Connecting to database...")
